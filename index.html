@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Songwriter Playground - V9</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+  background: #121212;
+  color: #eee;
+  font-family: 'Poppins', sans-serif;
+  padding: 30px;
+  max-width: 700px;
+  margin: auto;
+}
+
+h1 {
+  font-weight: 600;
+  font-size: 2.2rem;
+  margin-bottom: 25px;
+  letter-spacing: 1.2px;
+  text-align: center;
+  color: #f9a825; /* amber accent */
+}
+
+/* Label styling with background */
+label {
+  display: inline-block;
+  margin-top: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #eee;
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 4px 10px;
+  border-radius: 6px;
+  user-select: none;
+}
+
+/* Group container to stack label/input/button */
+.field-group {
+  margin-bottom: 25px;
+}
+
+.field-group > label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.field-group > input,
+.field-group > select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #1e1e1e;
+  color: #eee;
+  font-size: 1rem;
+  box-shadow: inset 0 0 5px #222;
+  transition: background-color 0.3s ease;
+  margin-top: 6px;
+}
+
+input[type=text]:read-only {
+  background: #2a2a2a;
+  cursor: default;
+  color: #bbb;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 100px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  background: #1e1e1e;
+  color: #eee;
+  font-size: 1rem;
+  box-shadow: inset 0 0 5px #222;
+  margin-top: 6px;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  height: 6px;
+  background: #333;
+  outline: none;
+  margin-top: 10px;
+  width: 100%;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #f9a825;
+  cursor: pointer;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #f9a825aa;
+  transition: background 0.2s ease;
+}
+
+input[type=range]:active::-webkit-slider-thumb {
+  background: #ffca28;
+}
+
+/* Buttons full width except we shrink them naturally */
+.field-group > button {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #f9a825;
+  color: #121212;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 5px #c6a700aa;
+  transition: background-color 0.3s ease;
+  width: auto;
+}
+
+.field-group > button:hover {
+  background: #ffca28;
+}
+
+/* Instrument toggles */
+#instrumentList {
+  margin-top: 10px;
+}
+
+.instrument-toggle {
+  display: inline-block;
+  margin: 5px 6px 5px 0;
+  padding: 7px 14px;
+  border: 1.5px solid #555;
+  border-radius: 15px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #ccc;
+  user-select: none;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.instrument-toggle.selected {
+  background-color: #f9a825;
+  color: #121212;
+  border-color: #f9a825;
+  box-shadow: 0 0 8px #f9a825cc;
+}
+
+/* Tempo label highlight */
+#tempoLabel {
+  font-weight: 700;
+  color: #f9a825;
+}
+</style>
+</head>
+<body>
+<h1>Songwriter Playground</h1>
+
+<h2 id="songTitle" style="font-weight: 700; font-size: 2.8rem; margin-bottom: 25px; color: #f9a825;"></h2>
+
+<div class="field-group">
+  <button onclick="suggestTitle()">Suggest Title</button>
+</div>
+
+<div class="field-group">
+  <label>Mood: <span id="moodLabel"></span></label>
+  <input type="range" id="mood" min="0" max="11" step="1">
+  <button onclick="suggestMood()">Suggest Mood</button>
+</div>
+
+<div class="field-group">
+  <label>Lyric Seed:</label>
+  <input type="text" id="lyricSeed" readonly>
+  <button onclick="suggestLyricSeed()">Suggest Lyric</button>
+</div>
+
+<div class="field-group">
+  <label>Chord Progression (Roman Numerals):</label>
+  <input type="text" id="chords" readonly>
+  <button onclick="suggestChords()">Suggest Chords</button>
+</div>
+
+<div class="field-group">
+  <label>Mode:</label>
+  <select id="mode">
+    <option>Major</option>
+    <option>Minor</option>
+    <option>Lydian</option>
+    <option>Dorian</option>
+    <option>Blues</option>
+  </select>
+  <button onclick="suggestMode()">Suggest Mode</button>
+</div>
+
+
+<div class="field-group">
+  <label>Key:</label>
+  <select id="key"></select>
+  <button onclick="suggestKey()">Suggest Key</button>
+</div>
+
+
+<div class="field-group">
+  <label>Tempo: <span id="tempoLabel"></span> BPM</label>
+  <input type="range" id="tempo" min="60" max="180">
+  <button onclick="suggestTempo()">Suggest Tempo</button>
+</div>
+
+<div class="field-group">
+  <label>Instruments:</label>
+  <div id="instrumentList"></div>
+  <button onclick="suggestInstruments()">Suggest Instruments</button>
+</div>
+
+<div class="field-group">
+  <label>Genre:</label>
+  <select id="genre"></select>
+  <button type="button" onclick="suggestGenre()">Suggest Genre</button>
+</div>
+
+<div class="field-group">
+  <label>Gimmick:</label>
+  <input type="text" id="gimmick" readonly>
+  <button onclick="suggestGimmick()">Suggest Gimmick</button>
+</div>
+
+<div class="field-group">
+  <label>Challenge:</label>
+  <input type="text" id="challenge" readonly>
+  <button onclick="suggestChallenge()">Suggest Challenge</button>
+</div>
+
+<div class="field-group">
+  <label>Seed:</label>
+  <input type="text" id="seed">
+  <button onclick="loadSeed()">Load Seed</button>
+</div>
+
+<div class="field-group">
+  <button onclick="randomize()">Randomize</button>
+</div>
+
+<div class="field-group">
+  <label>Notes:</label>
+  <textarea id="notes" rows="5"></textarea>
+</div>
+
+<script>
+
+const titleSubjects = ["I", "You", "We", "They", "He", "She"];
+const titleVerbs = ["want", "need", "run", "fly", "drive", "hide", "see", "feel", "wait", "break"];
+const titleObjects = ["love", "pain", "truth", "silence", "angel", "fire", "dream", "world", "light", "darkness"];
+const titleAdjectives = ["quiet", "wild", "broken", "cold", "lost", "silent", "dark", "wild"];
+const titlePrepositions = ["to", "and", "for", "with", "without", "like"];
+const titleSingleWords = ["Gnaw", "Burn", "Fade", "Break", "Rise", "Fall"];
+
+const titleTemplates = [
+  () => titleSingleWords[Math.floor(Math.random() * titleSingleWords.length)],
+  () => `${titleVerbs[Math.floor(Math.random() * titleVerbs.length)]}`,
+  () => `${titleVerbs[Math.floor(Math.random() * titleVerbs.length)]} ${titlePrepositions[Math.floor(Math.random() * titlePrepositions.length)]} ${titleObjects[Math.floor(Math.random() * titleObjects.length)]}`,
+  () => `${titleSubjects[Math.floor(Math.random() * titleSubjects.length)]} ${titleVerbs[Math.floor(Math.random() * titleVerbs.length)]} ${titleObjects[Math.floor(Math.random() * titleObjects.length)]}`,
+  () => `${titleAdjectives[Math.floor(Math.random() * titleAdjectives.length)]} ${titleObjects[Math.floor(Math.random() * titleObjects.length)]}`,
+  () => `${titleVerbs[Math.floor(Math.random() * titleVerbs.length)]} ${titleObjects[Math.floor(Math.random() * titleObjects.length)]}`,
+  () => `${titleSubjects[Math.floor(Math.random() * titleSubjects.length)]} ${titleVerbs[Math.floor(Math.random() * titleVerbs.length)]}`,
+  () => `${titleSubjects[Math.floor(Math.random() * titleSubjects.length)]} ${titleVerbs[Math.floor(Math.random() * titleVerbs.length)]} and ${titleVerbs[Math.floor(Math.random() * titleVerbs.length)]}`,
+];
+
+function generateTitle() {
+  const template = titleTemplates[Math.floor(Math.random() * titleTemplates.length)];
+  const title = template();
+  return title.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+const moods = [
+  "Depressed", "Melancholic", "Somber", "Nostalgic", "Bittersweet",
+  "Calm", "Hopeful", "Energetic", "Aggressive", "Triumphant", "Manic", "Chaotic"
+];
+
+const moodSlider = document.getElementById('mood');
+const moodLabel = document.getElementById('moodLabel');
+
+moodSlider.addEventListener('input', () => {
+  moodLabel.textContent = moods[moodSlider.value];
+  
+  
+});
+const instruments = ["Acoustic Guitar", "Electric Guitar (Clean)", "Electric Guitar (Distorted)", "Electric Drums", "Synth Drums", "Acoustic Drums", "Bass Guitar", "Synth Bass", "Piano", "Synth Pad", "Brass", "Strings"];
+const genres = [
+  "Electronic",
+  "Emo",
+  "Midwest Emo",
+  "Folk",
+  "Pop",
+  "Rock",
+  "Hardcore",
+  "Punk",
+  "Jazz",
+  "Hip-Hop",
+  "Ambient",
+  "Shoegaze",
+  "Post-Rock",
+  "Indie",
+  "Synthwave",
+  "Blues",
+  "Garage Rock",
+  "Lo-fi",
+  "Noise",
+  "Grunge",
+  "Trap",
+  "Experimental",
+  "Dream Pop"
+];
+chordOptions = {
+  "Major": [
+    // Originals
+    "I - V - vi - IV",
+    "I - IV - V - IV",
+    "ii - V - I",
+    "I - vi - IV - V",
+    "I - iii - IV - V",
+    "IV - V - I - vi",
+    "vi - IV - I - V",
+    "I - V - IV - I",
+    "I - IV - I - V",
+    "IV - I - V - vi",
+    "ii - IV - V - I",
+    "I - V - vi - iii - IV - I - IV - V",
+    // Spicier variants
+    "Imaj7 - IVmaj7 - V7 - IV",
+    "ii7 - V7 - Imaj7",
+    "I - vi7 - IVadd9 - V",
+    "I - iii7 - IV - Vadd9",
+    "IV - V7 - I - vi7",
+    "vi7 - IVadd9 - I - V7",
+    "I - V7sus4 - IV - I",
+    "Iadd9 - IV - I - V",
+    "IVsus2 - I - V7 - vi",
+    "ii7 - IV - V7 - Imaj7",
+    "I - V - vi7 - iii7 - IV - I - IV - V7"
+  ],
+  "Minor": [
+    // Originals
+    "i - VI - III - VII",
+    "i - iv - v - i",
+    "ii° - v - i",
+    "i - VII - VI - VII",
+    "i - v - VI - III",
+    "i - iv - VII - III",
+    "VI - VII - i - iv",
+    "i - iv - i - v",
+    "VII - III - VI - i",
+    "i - VI - iv - V",
+    "i - v - VI - iv - i",
+    "i - iv - VII - VI - III - VII",
+    // Spicier variants
+    "i7 - ivm7 - vm7 - i",
+    "iiø7 - v7 - i",
+    "i - VII7sus4 - VI7 - VII",
+    "i - v7 - VIadd9 - III7",
+    "i - iv7 - VIIsus2 - III",
+    "VI - VII - i7 - iv7",
+    "i - ivm7 - i - v7",
+    "VII7 - III7 - VI - i",
+    "i7 - VI - iv7 - V7",
+    "i - v7 - VI - iv7 - i",
+    "i - iv7 - VII - VI7 - III7 - VII7"
+  ],
+  "Lydian": [
+    // Originals
+    "I - II - V - I",
+    "I - II - iii - V",
+    "I - V - II - I",
+    "I - IV - II - V",
+    "I - II - IV - I",
+    "I - IV - V - II",
+    "II - I - V - IV",
+    "I - II - I - IV - V",
+    "I - II - iii - IV - V",
+    // Spicier variants
+    "Imaj7 - II7 - V7 - Imaj7",
+    "I - II7sus4 - iii7 - V7",
+    "Imaj7 - V7 - II7 - Imaj7",
+    "Imaj7 - IVadd9 - II7 - V7",
+    "I - II7 - IVadd9 - I",
+    "Imaj7 - IV - V7 - II7",
+    "II7sus4 - Imaj7 - V7 - IVadd9",
+    "Imaj7 - II7 - Imaj7 - IV - V7",
+    "Imaj7 - II7 - iii7 - IV - V7"
+  ],
+  "Dorian": [
+    // Originals
+    "i - IV - VII - i",
+    "i - v - IV - VII",
+    "i - VII - III - VI",
+    "i - IV - v - i",
+    "i - VI - IV - VII",
+    "i - iv - v - VI",
+    "i - VII - VI - v",
+    "i - VII - iv - v",
+    "i - v - VI - VII",
+    "i - IV - III - VII",
+    // Spicier variants
+    "i7 - IVmaj7 - VII7 - i7",
+    "i7 - v7 - IVmaj7 - VII7",
+    "i7 - VII7 - III7 - VImaj7",
+    "i7 - IVmaj7 - v7 - i7",
+    "i7 - VI7 - IVmaj7 - VII7",
+    "i7 - iv7 - v7 - VI7",
+    "i7 - VII7 - VI7 - v7",
+    "i7 - VII7 - iv7 - v7",
+    "i7 - v7 - VI7 - VII7",
+    "i7 - IVmaj7 - III7 - VII7"
+  ],
+  "Blues": [
+    // Originals
+    "I7 - IV7 - V7 - IV7",
+    "I7 - I7 - IV7 - V7",
+    "I7 - IV7 - I7 - V7",
+    "I7 - V7 - IV7 - I7",
+    "IV7 - I7 - V7 - IV7",
+    "I7 - IV7 - V7 - I7",
+    "I7 - V7 - I7 - IV7",
+    "IV7 - IV7 - I7 - I7 - V7 - IV7",
+    "I7 - IV7 - I7 - V7 - IV7 - I7",
+    "I - III - VI - II - V",
+    // Spicier variants
+    "I7sus4 - IV7 - V7 - IV7",
+    "I7 - I7sus4 - IV7 - V7",
+    "I7 - IV7sus2 - I7 - V7",
+    "I7 - V7 - IV7sus4 - I7",
+    "IV7add9 - I7 - V7 - IV7",
+    "I7 - IV7add9 - V7 - I7",
+    "I7 - V7 - I7sus4 - IV7",
+    "IV7 - IV7sus4 - I7 - I7 - V7 - IV7",
+    "I7 - IV7 - I7 - V7sus4 - IV7 - I7",
+    "I7 - III7 - VI7 - II7 - V7",
+    "I7sus4 - III7 - VI7add9 - II7 - V7",
+    "I7 - III7sus4 - VI7 - II7add9 - V7"
+  ]
+};
+const lyricIdeas = [
+  // My Chemical Romance-inspired
+  "Bleeding hearts hide under blackened skies",
+  "We scream to feel alive in the wreckage",
+  "Ghosts of our youth dance in burning rooms",
+  "Falling faster into a desperate dream",
+  "The world crumbles but we won’t back down",
+
+  // Alex G-inspired
+  "Fingers trace scars only I remember",
+  "Empty bottles echo with lost regrets",
+  "Your shadow lingers like a faded song",
+  "Quiet nights swallowed by restless thoughts",
+  "We’re broken pieces trying to fit back in",
+
+  // Panic! at the Disco-inspired
+  "I’m the king of chaos and broken promises",
+  "Dancing flames flicker in shattered mirrors",
+  "Lost in the flash of a reckless grin",
+  "We burn bright then crash without warning",
+  "The night sings secrets nobody hears",
+
+  // Minor Threat-inspired
+  "No rules can cage a fire that’s already wild",
+  "Outsiders screaming louder than the crowd",
+  "Rebel hearts don’t ask for permission",
+  "Standing tall in a world built on lies",
+  "Breaking chains one shout at a time",
+
+  // Gorilla Biscuits-inspired
+  "Together we rise against the cold and dark",
+  "Voices unite, shaking worn-out streets",
+  "Hope burns strong in the fists of the fallen",
+  "No fear when we stand side by side",
+  "Fighting for more than just survival",
+
+  // MF DOOM-inspired
+  "Masked villain weaving tales in shadows",
+  "Rhymes sharp enough to cut through steel",
+  "Stories told between beats and silence",
+  "Hidden meanings in every crooked grin",
+  "Playing chess with ghosts in a city of lies",
+
+  // Big Thief / Adrianne Lenker-inspired
+  "Soft words carry storms beneath the calm",
+  "Fading light drips from tired eyes",
+  "Love lingers like a whispered ache",
+  "Ghosts of past selves haunt quiet rooms",
+  "Bones heavy with the weight of memory",
+
+  // Queen-inspired
+  "Roaring crowds echo in empty halls",
+  "We’ll rise again, louder than before",
+  "Dreams roar alive beneath flashing lights",
+  "Freedom dances in a thousand voices",
+  "The fire inside can’t be tamed or chained",
+
+  // TV Girl-inspired
+  "Lost in a haze of neon lies",
+  "Sweet whispers hiding bitter truths",
+  "Chasing ghosts down empty avenues",
+  "Love’s a game with no rules to follow",
+  "Falling faster in a paper world",
+
+  // Slowdive / My Bloody Valentine-inspired
+  "Sound washes over like a tidal wave",
+  "Colors blur into the edges of night",
+  "Dreams drip slowly through static haze",
+  "Echoes float where memories fade",
+  "Shadows melt beneath quiet storms",
+
+  // Radiohead-inspired
+  "Caught between silence and a screaming mind",
+  "Falling through cracks in a fractured world",
+  "Lost souls wander without direction",
+  "Cold light cuts sharper than any blade",
+  "Everything’s breaking but nobody notices",
+
+  // Deftones-inspired
+  "Darkness wraps around like a second skin",
+  "Pain bleeds through every quiet breath",
+  "Eyes burn with untold secrets and lies",
+  "The edge is closer than it appears",
+  "Voices whisper beneath the crashing waves",
+
+  // Oasis-inspired
+  "Chasing sunrises on a cracked street",
+  "Dreams hang heavy like the morning haze",
+  "Fading hopes tied to reckless hearts",
+  "Holding on to moments that slip away",
+  "Every goodbye feels like a new start",
+
+  // Blur-inspired
+  "City lights blur past tired eyes",
+  "Stories lost in the noise of the crowd",
+  "Laughter hides behind broken smiles",
+  "Running fast but going nowhere",
+  "Fading ghosts in a restless town",
+
+  // System of a Down-inspired
+  "Chaos reigns in the silence between words",
+  "Shadows scream louder than daylight",
+  "Fury boils beneath calm faces",
+  "Broken systems bleed into the streets",
+  "Eyes wide open to a world on fire",
+
+  // Mazzy Star-inspired
+  "Soft rain falls on forgotten roads",
+  "Whispers drift on a warm night breeze",
+  "Lonely hearts sink into quiet dreams",
+  "Shadows stretch under fading stars",
+  "Echoes of love in a silent room",
+
+  // Yung Lean-inspired
+  "Cold nights lost in a neon haze",
+  "Ghosts drift through empty city streets",
+  "Chasing feelings that slip through fingers",
+  "Ice in my veins, fire in my mind",
+  "Fading fast in a world that won’t wait",
+
+  // Lil Peep-inspired
+  "Broken hearts bleeding under streetlights",
+  "Tears mix with smoke and shattered dreams",
+  "Falling deep where no one can reach",
+  "Dark thoughts crawling through empty veins",
+  "Love’s a poison I can’t escape",
+
+  // Bones-inspired
+  "Walking shadows in a world of ash",
+  "Silent screams echo through empty halls",
+  "Cold breath in the dead of night",
+  "Lost souls wander without a home",
+  "Fading fast under a blood-red sky"
+];
+const gimmicks = [
+  "Funny",
+  "Glitchy",
+  "Short",
+  "Loud",
+  "Weird Vocals",
+  "Retro Sounding",
+  "Minimalist",
+  "Spoken Word",
+  "Unusual Time Signature",
+  "Field Recordings",
+  "Heavy Distortion",
+  "Acoustic Only",
+  "Drone",
+  "Polyrhythm",
+  "Layered Textures",
+  "Reverse Audio",
+  "Monophonic",
+  "Chiptune Style",
+  "Ambient Noise",
+  "Stutter Effects",
+  "Unexpected Silence",
+  "Auto-Tuned Chaos",
+  "Unconventional Instruments",
+  "Extreme Tempo Changes",
+  "Noise Floor Manipulation",
+  "Glitch Hop Elements",
+  "Randomized MIDI",
+  "Live Looping",
+  "Tape Saturation",
+  "Broken Beat",
+  "Vocoder Vocals",
+  "Sound Collage",
+  "Backwards Vocals",
+  "Static Interference",
+  "Circuit Bent Synths",
+  "Overlapping Time Signatures",
+  "Vintage"
+];
+const challenges = [
+  "No drums",
+  "4 tracks only",
+  "Only EQ on master",
+  "One take recording",
+  "No bassline",
+  "Only use one instrument",
+  "Make the whole track under 30 minutes",
+  "Limit yourself to 4 tracks in your DAW",
+  "Only use sounds you recorded",
+  "No reverb or delay allowed",
+  "Only use stock plugins",
+  "Use an odd time signature",
+  "All melodic elements must be played on one string",
+  "Finish the song in 2 hours (no mixing after)",
+  "No quantization",
+  "No chords, only single notes",
+  "No compression on any track",
+  "Only use acoustic instruments",
+  "No automation",
+  "No panning, keep everything centered",
+  "Use a single scale",
+  "No loops shorter than 4 bars",
+  "No loops longer than 4 bars",
+  "No layering more than 2 sounds at once",
+  "No effects except EQ and volume",
+  "Limit velocity variation",
+  "Only use sounds from one source (e.g. one synth or one sample pack)",
+  "Create the entire track using only samples",
+  "No MIDI editing after recording",
+  "No tempo changes",
+  "Use only one octave range",
+  "Keep dynamic range tight (no big volume jumps)",
+  "No edits longer than 8 bars",
+  "Record live, no programming"
+];
+
+const keySelect = document.getElementById('key');
+const tempo = document.getElementById('tempo');
+const tempoLabel = document.getElementById('tempoLabel');
+const instrumentList = document.getElementById('instrumentList');
+const genreSelect = document.getElementById('genre');
+const seedBox = document.getElementById('seed');
+["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"].forEach(k => keySelect.innerHTML += `<option>${k}</option>`);
+instruments.forEach(i => {
+  const btn = document.createElement('div');
+  btn.className = 'instrument-toggle';
+  btn.textContent = i;
+  btn.onclick = () => btn.classList.toggle('selected');
+  instrumentList.appendChild(btn);
+});
+genres.forEach(g => genreSelect.innerHTML += `<option>${g}</option>`);
+
+tempo.addEventListener('input', () => tempoLabel.textContent = tempo.value);
+
+function setSeededRandom(seed) {
+  let s = 0;
+  for (let i = 0; i < seed.length; i++) s = (s << 5) - s + seed.charCodeAt(i);
+  return function() {
+    s = Math.imul(48271, s & 2147483647) % 2147483647;
+    return (s & 2147483647) / 2147483648;
+  }
+}
+function randomChoice(arr, rand) { return arr[Math.floor(rand() * arr.length)]; }
+
+function suggestMode() {
+  const modes = Object.keys(chordOptions);
+  document.getElementById('mode').value = modes[Math.floor(Math.random() * modes.length)];
+  suggestChords(); // update chords to match new mode
+}
+function suggestKey() {
+  const keys = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  document.getElementById('key').value = keys[Math.floor(Math.random() * keys.length)];
+}
+
+function suggestTempo() {
+  const tempoSlider = document.getElementById('tempo');
+  const tempoLabel = document.getElementById('tempoLabel');
+  const randomTempo = 60 + Math.floor(Math.random() * 121); // 60-180 bpm
+  tempoSlider.value = randomTempo;
+  tempoLabel.textContent = randomTempo;
+}
+
+function suggestInstruments() {
+  const rand = Math.random();
+  [...document.getElementById('instrumentList').children].forEach(btn => {
+    btn.classList.toggle('selected', Math.random() > 0.5);
+  });
+}
+
+function suggestGenre() {
+  const rand = Math.random();
+  genreSelect.value = genres[Math.floor(rand * genres.length)];
+}
+
+function suggestMood() {
+  const val = Math.floor(Math.random() * moods.length);
+  moodSlider.value = val;
+  moodLabel.textContent = moods[val];
+}
+
+function suggestTitle() {
+  const title = generateTitle();
+  document.getElementById('songTitle').textContent = title;
+}
+
+  
+
+function randomize(seed) {
+  if (!seed) seed = Math.random().toString(36).substring(2, 8);
+  seedBox.value = seed;
+  const rand = setSeededRandom(seed);
+  document.getElementById('lyricSeed').value = randomChoice(lyricIdeas, rand);
+  const mode = document.getElementById('mode').value = randomChoice(Object.keys(chordOptions), rand);
+  document.getElementById('chords').value = randomChoice(chordOptions[mode], rand);
+  keySelect.value = randomChoice(["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"], rand);
+  tempo.value = 60 + Math.floor(rand() * 121);
+  tempoLabel.textContent = tempo.value;
+  [...instrumentList.children].forEach(btn => btn.classList.toggle('selected', rand() > 0.5));
+  genreSelect.value = randomChoice(genres, rand);
+  document.getElementById('gimmick').value = randomChoice(gimmicks, rand);
+  document.getElementById('challenge').value = randomChoice(challenges, rand);
+  document.body.style.backgroundColor = `#${Math.floor(rand()*16777215).toString(16)}`; 
+  genreSelect.value = randomChoice(genres, rand);
+  // After setting tempo and others...
+const moodVal = Math.floor(rand() * moods.length);
+moodSlider.value = moodVal;
+moodLabel.textContent = moods[moodVal];
+suggestTitle(); // add this line at the end to update title
+}
+function loadSeed() { if (seedBox.value) randomize(seedBox.value); }
+function suggestLyricSeed() { document.getElementById('lyricSeed').value = randomChoice(lyricIdeas, Math.random); }
+function suggestChords() {
+  const mode = document.getElementById('mode').value;
+  document.getElementById('chords').value = randomChoice(chordOptions[mode], Math.random);
+}
+function suggestGimmick() { document.getElementById('gimmick').value = randomChoice(gimmicks, Math.random); }
+function suggestChallenge() { document.getElementById('challenge').value = randomChoice(challenges, Math.random); }
+
+randomize();
+</script>
+</body>
+</html>
